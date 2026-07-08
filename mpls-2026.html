@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Twibbon MPLS MUDACIL</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 10px; display: flex; justify-content: center; }
+        #twibbon-widget { max-width: 500px; width: 100%; background: #ffffff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .preview-area { position: relative; margin: 15px 0; border: 3px dashed #007BFF; border-radius: 12px; overflow: hidden; aspect-ratio: 4/5; touch-action: none; background: #eee; }
+        canvas { width: 100%; height: 100%; touch-action: none; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 15px; }
+        .btn { padding: 10px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; color: white; font-size: 14px; }
+        .btn-upload { background-color: #28a745; }
+        .btn-download { background-color: #007BFF; }
+        .btn-reset { background-color: #6c757d; }
+        .message-box { display: none; margin-top: 10px; padding: 10px; background-color: #dc3545; color: white; border-radius: 8px; font-size: 13px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div id="twibbon-widget">
+    <h2 style="text-align: center;">📸 Twibbon MPLS 2026</h2>
+    <p style="font-size: 14px; color: #666;">Gunakan 1 jari untuk geser, 2 jari untuk zoom/cubit.</p>
+
+    <div class="preview-area" id="dropArea">
+        <canvas id="canvas" width="1080" height="1350"></canvas>
+    </div>
+
+    <input accept="image/*" id="uploadFoto" type="file" style="display: none;" />
+    
+    <div class="controls">
+        <button class="btn btn-upload" onclick="document.getElementById('uploadFoto').click()">📤 Upload</button>
+        <button class="btn btn-reset" onclick="resetImage()">🔄 Reset</button>
+        <button class="btn btn-download" onclick="downloadImage()">⬇️ Download</button>
+    </div>
+    <div id="messageBox" class="message-box"></div>
+</div>
+
+<script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    let image = null, twibbon = new Image(), imgX = 0, imgY = 0, scale = 1;
+    let initialPinchDist = null;
+
+    twibbon.src = "mpls-26.png";
+    twibbon.onload = () => draw();
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (image) {
+            ctx.save();
+            ctx.translate(imgX, imgY);
+            ctx.scale(scale, scale);
+            ctx.drawImage(image, 0, 0);
+            ctx.restore();
+        }
+        ctx.drawImage(twibbon, 0, 0, canvas.width, canvas.height);
+    }
+
+    document.getElementById("uploadFoto").addEventListener("change", e => {
+        const reader = new FileReader();
+        reader.onload = e => {
+            image = new Image();
+            image.onload = () => resetImage();
+            image.src = e.target.result;
+        };
+        reader.readAsDataURL(e.target.files[0]);
+    });
+
+    function resetImage() {
+        if (!image) return;
+        scale = Math.max(canvas.width / image.width, canvas.height / image.height);
+        imgX = (canvas.width - image.width * scale) / 2;
+        imgY = (canvas.height - image.height * scale) / 2;
+        draw();
+    }
+
+    // Touch Handling (Drag & Pinch Zoom)
+    let lastX, lastY;
+    canvas.addEventListener('touchstart', e => {
+        if (e.touches.length === 1) {
+            lastX = e.touches[0].clientX;
+            lastY = e.touches[0].clientY;
+        } else if (e.touches.length === 2) {
+            initialPinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        }
+    }, {passive: false});
+
+    canvas.addEventListener('touchmove', e => {
+        e.preventDefault();
+        if (e.touches.length === 1 && lastX) {
+            imgX += e.touches[0].clientX - lastX;
+            imgY += e.touches[0].clientY - lastY;
+            lastX = e.touches[0].clientX;
+            lastY = e.touches[0].clientY;
+        } else if (e.touches.length === 2) {
+            let dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+            scale *= dist / initialPinchDist;
+            initialPinchDist = dist;
+        }
+        draw();
+    }, {passive: false});
+
+    function downloadImage() {
+        if (!image) { alert("Upload foto dulu!"); return; }
+        const link = document.createElement("a");
+        link.download = "Twibbon-MPLS-2026.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    }
+</script>
+</body>
+</html>
