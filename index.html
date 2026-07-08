@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twibbon MPLS MUDACIL</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; padding: 20px; }
+        #twibbon-widget { max-width: 600px; width: 100%; background: #ffffff; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
+        
+        /* Area canvas dengan rasio 4:5 */
+        .preview-area { position: relative; margin: 20px auto; border: 4px dashed #007BFF; border-radius: 12px; overflow: hidden; background: #eee; aspect-ratio: 4/5; }
+        canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+        
+        .controls { display: flex; gap: 10px; justify-content: center; margin-top: 15px; flex-wrap: wrap; }
+        .btn { padding: 12px 20px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: 0.3s; color: white; }
+        .btn-upload { background-color: #28a745; }
+        .btn-download { background-color: #007BFF; }
+        .btn-reset { background-color: #6c757d; }
+        .message-box { display: none; margin-top: 15px; padding: 10px; background-color: #dc3545; color: white; border-radius: 8px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div id="twibbon-widget">
+    <h2>📸 Twibbon MPLS MUDACIL 2026</h2>
+
+    <div class="info-container" style="margin-bottom: 20px; line-height: 1.6; color: #444; text-align: left;">
+       
+    <p style="text-align: center; font-weight: bold; color: #007BFF;">Siap untuk menyambut MPLS tahun ini?</p>
+
+    <p>Ikuti langkah mudah di bawah ini untuk membuat fotomu terlihat lebih keren:</p>
+    
+    <ul style="padding-left: 20px;">
+        <li><strong>Upload Foto:</strong> Klik tombol "Upload Foto" dan pilih foto terbaikmu.</li>
+        <li><strong>Sesuaikan:</strong> Geser, cubit (zoom), atau atur posisi fotomu agar pas di dalam bingkai.</li>
+        <li><strong>Download:</strong> Klik tombol "Download" untuk menyimpan hasil akhirnya.</li>
+    </ul>
+
+    <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; font-size: 0.9em; margin: 15px 0;">
+        <strong>Catatan:</strong> Jika hasil tidak otomatis terunduh, kamu bisa menahan gambar (long-press) lalu pilih "Simpan Gambar", atau cukup lakukan <em>screenshot</em>.
+    </div>
+
+    <p style="text-align: center; font-weight: bold; margin-top: 20px;">
+        🚀 Jangan lupa! Posting hasil karyamu di media sosial dan tag akun sekolah kami agar kita bisa saling menyapa. Mari buat MPLS tahun ini lebih berkesan!
+    </p>
+    </div>
+
+    <p>Upload fotomu (Rasio 4:5 disarankan)</p>
+
+    <div class="preview-area">
+        <canvas id="canvas" width="1080" height="1350"></canvas>
+    </div>
+
+    <input accept="image/*" id="uploadFoto" type="file" style="display: none;" />
+    
+    <div class="controls">
+        <button class="btn btn-upload" onclick="document.getElementById('uploadFoto').click()">📤 Upload</button>
+        <button class="btn btn-reset" onclick="resetImage()">🔄 Reset</button>
+        <button class="btn btn-download" onclick="downloadImage()">⬇️ Download</button>
+    </div>
+
+    <div id="messageBox" class="message-box"></div>
+</div>
+
+<script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const messageBox = document.getElementById("messageBox");
+    
+    let image = null;
+    let twibbon = new Image();
+    // Path sesuai dengan nama file baru kamu
+    twibbon.src = "mpls-26.png"; 
+
+    let imgX = 0, imgY = 0, scale = 1, dragging = false;
+    let startX = 0, startY = 0;
+
+    twibbon.onload = () => draw();
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (image) {
+            ctx.save();
+            ctx.translate(imgX, imgY);
+            ctx.scale(scale, scale);
+            ctx.drawImage(image, 0, 0);
+            ctx.restore();
+        }
+        ctx.drawImage(twibbon, 0, 0, canvas.width, canvas.height);
+    }
+
+    document.getElementById("uploadFoto").addEventListener("change", e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = event => {
+            image = new Image();
+            image.onload = () => resetImage();
+            image.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    function resetImage() {
+        if (!image) return;
+        scale = Math.max(canvas.width / image.width, canvas.height / image.height);
+        imgX = (canvas.width - image.width * scale) / 2;
+        imgY = (canvas.height - image.height * scale) / 2;
+        draw();
+    }
+
+    // Mouse & Touch Logic
+    const getPos = (e) => ({
+        x: (e.clientX || (e.touches && e.touches[0].clientX)) - canvas.getBoundingClientRect().left,
+        y: (e.clientY || (e.touches && e.touches[0].clientY)) - canvas.getBoundingClientRect().top
+    });
+
+    canvas.addEventListener("mousedown", e => { dragging = true; let p = getPos(e); startX = p.x; startY = p.y; });
+    window.addEventListener("mousemove", e => {
+        if (!dragging || !image) return;
+        let p = getPos(e);
+        imgX += (p.x - startX) * (canvas.width / canvas.clientWidth);
+        imgY += (p.y - startY) * (canvas.height / canvas.clientHeight);
+        startX = p.x; startY = p.y;
+        draw();
+    });
+    window.addEventListener("mouseup", () => dragging = false);
+
+    canvas.addEventListener("wheel", e => {
+        if (!image) return;
+        scale += e.deltaY * -0.001;
+        scale = Math.min(Math.max(0.1, scale), 5);
+        draw();
+    });
+
+    function downloadImage() {
+        if (!image) {
+            messageBox.innerText = "⚠️ Upload foto dulu ya!";
+            messageBox.style.display = "block";
+            setTimeout(() => messageBox.style.display = "none", 3000);
+            return;
+        }
+        const link = document.createElement("a");
+        link.download = "Twibbon-MPLS-2026.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    }
+</script>
+</body>
+</html>
